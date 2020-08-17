@@ -1,5 +1,3 @@
-/* Copy this code in your css file. */
-
 html,
 body {
   /* width: 500px; */
@@ -30,7 +28,7 @@ body {
   width: 200px;
   height: 200px;
   border-radius: 100%;
-  position: absolute; /* Tweak the position property if the element seems to be unfit */
+  position: absolute;
   top: 10px;
   left: 50%;
   margin-left: -100px;
@@ -135,10 +133,14 @@ body {
 
 .modal-header {
   padding-bottom: 5px;
+  text-align: center;
 }
 
 .modal-footer {
   padding: 0;
+}
+.mytitle {
+  display: inline-block;
 }
 
 .modal-footer .btn-group button {

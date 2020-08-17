@@ -1,5 +1,19 @@
 var listUsers = [];
 
+$(document).ready(function () {
+  getData();
+  $("#list").click(function (event) {
+    event.preventDefault();
+
+    $("#products .item").addClass("list-group-item");
+  });
+  $("#grid").click(function (event) {
+    event.preventDefault();
+    $("#products .item").removeClass("list-group-item");
+    $("#products .item").addClass("grid-group-item");
+  });
+});
+
 function createCardUser(user) {
   return `
     <div id = ${user.id} class="item col-xs-4 col-lg-4">
@@ -19,17 +33,24 @@ function createCardUser(user) {
           Description
         </p>
         <div class="row">
-          <div class="col-xs-12 col-md-6">
+          <div class="col-xs-12 col-md-12">
             <p class="lead">
               ${user.email}
             </p>
           </div>
-          <div class="col-xs-12 col-md-6">
-          <button class="btn btn-success" 
-            data-toggle="modal"
-            data-target="#squarespaceModal"
-            onclick="setDefaultInfoForUpdateUser(${user.id})"
-          >Edit</button>
+        </div>
+        <div class="row">
+          <div class="col-xs-12 col-md-3">
+            <button class="btn btn-success" 
+              data-toggle="modal"
+              data-target="#squarespaceModal"
+              onclick="setDefaultInfoForUpdateUser(${user.id})"
+            >Edit</button>
+          </div>
+          <div class="col-xs-12 col-md-3">
+            <button class="btn btn-danger" 
+              onclick="deleteUserHandler(${user.id})"
+            >Delete</button>
           </div>
         </div>
       </div>
@@ -40,27 +61,15 @@ function createCardUser(user) {
 
 async function getData() {
   $.get("/users", function (data, status) {
-    console.log(data);
-    listUsers = data.data.data;
-    for (let userIndex in listUsers) {
-      $("#products").append(createCardUser(listUsers[userIndex]));
+    if (data !== null) {
+      console.log(data);
+      listUsers = data.data.data;
+      for (let userIndex in listUsers) {
+        $("#products").append(createCardUser(listUsers[userIndex]));
+      }
     }
   });
 }
-
-$(document).ready(function () {
-  getData();
-  $("#list").click(function (event) {
-    event.preventDefault();
-
-    $("#products .item").addClass("list-group-item");
-  });
-  $("#grid").click(function (event) {
-    event.preventDefault();
-    $("#products .item").removeClass("list-group-item");
-    $("#products .item").addClass("grid-group-item");
-  });
-});
 
 function postUserHandler(event) {
   event.preventDefault();
@@ -71,32 +80,14 @@ function postUserHandler(event) {
     email: document.getElementById("email").value,
   };
   $.post("/users", user, function (data, status) {
-    var userSuccess = data.data;
-    userSuccess.id = parseInt(userSuccess.id);
-    listUsers.push(userSuccess);
-    console.log(listUsers);
-    $("#products").append(createCardUser(userSuccess));
-  });
-}
-
-function findUserById(userId) {
-  for (index in listUsers) {
-    if (listUsers[index].id === userId) {
-      return listUsers[index];
+    if (data !== null) {
+      var userSuccess = data.data;
+      userSuccess.id = parseInt(userSuccess.id);
+      listUsers.push(userSuccess);
+      console.log(listUsers);
+      $("#products").append(createCardUser(userSuccess));
     }
-  }
-  return null;
-}
-
-function setDefaultInfoForUpdateUser(userId) {
-  let user = findUserById(userId);
-  if (user !== null) {
-    document.getElementById("inputId").value = user.id;
-    document.getElementById("inputAvatarLink").value = user.avatar;
-    document.getElementById("inputFirstName").value = user.first_name;
-    document.getElementById("inputLastName").value = user.last_name;
-    document.getElementById("inputEmail").value = user.email;
-  }
+  });
 }
 
 function updateUserHandler(event) {
@@ -113,16 +104,67 @@ function updateUserHandler(event) {
     type: "PUT",
     data: user,
     success: function (data, status) {
-      var updatedUser = data.data;
-      updatedUser.id = parseInt(updatedUser.id);
-      $(`#${updatedUser.id}`).replaceWith(createCardUser(updatedUser));
-      $("#squarespaceModal").trigger("click");
-      for (index in listUsers) {
-        if (listUsers[index].id === updatedUser.id) {
-          listUsers[index] = updatedUser;
+      if (data !== null) {
+        var updatedUser = data.data;
+        updatedUser.id = parseInt(updatedUser.id);
+        $(`#${updatedUser.id}`).replaceWith(createCardUser(updatedUser));
+        $("#squarespaceModal").trigger("click");
+        for (index in listUsers) {
+          if (listUsers[index].id === updatedUser.id) {
+            listUsers[index] = updatedUser;
+          }
         }
+        alert("Update successfully!");
       }
-      alert("Update successfully!");
     },
   });
+}
+
+function deleteUserHandler(userId) {
+  const user = findUserById(userId);
+  if (user !== null) {
+    $.ajax({
+      url: "/users",
+      type: "DELETE",
+      data: user,
+      success: function (data, status) {
+        if (data !== null) {
+          let index = findIndexOfUserById(parseInt(data.data.id));
+          console.log(index);
+          $(`#${data.data.id}`).remove();
+          listUsers.splice(index, 1);
+          console.log(listUsers);
+        }
+      },
+    });
+  }
+}
+
+function findUserById(userId) {
+  for (index in listUsers) {
+    if (listUsers[index].id === userId) {
+      return listUsers[index];
+    }
+  }
+  return null;
+}
+
+function findIndexOfUserById(userId) {
+  for (index in listUsers) {
+    if (listUsers[index].id === userId) {
+      return index;
+    }
+  }
+  return null;
+}
+
+function setDefaultInfoForUpdateUser(userId) {
+  let user = findUserById(userId);
+  if (user !== null) {
+    document.getElementById("inputId").value = user.id;
+    document.getElementById("inputAvatarLink").value = user.avatar;
+    document.getElementById("inputFirstName").value = user.first_name;
+    document.getElementById("inputLastName").value = user.last_name;
+    document.getElementById("inputEmail").value = user.email;
+  }
 }

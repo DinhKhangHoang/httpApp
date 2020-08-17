@@ -46,6 +46,17 @@ app.put("/users", async (req, res) => {
   }
 });
 
+app.delete("/users", async (req, res) => {
+  try {
+    //console.log(req.body);
+    let response = await axios.post("https://reqres.in/api/users", req.body);
+    res.setHeader("Content-Type", "application/json");
+    res.send({ data: response.data });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 app.listen(3000, function () {
   console.log("Running on port 3000.");
 });
