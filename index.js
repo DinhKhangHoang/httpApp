@@ -57,6 +57,6 @@ app.delete("/users", async (req, res) => {
   }
 });
 
-app.listen(3000, function () {
+app.listen(port, function () {
   console.log("Running on port 3000.");
 });

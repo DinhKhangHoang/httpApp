@@ -130,10 +130,8 @@ function deleteUserHandler(userId) {
       success: function (data, status) {
         if (data !== null) {
           let index = findIndexOfUserById(parseInt(data.data.id));
-          console.log(index);
           $(`#${data.data.id}`).remove();
           listUsers.splice(index, 1);
-          console.log(listUsers);
         }
       },
     });
