@@ -1,10 +1,72 @@
-var listUsers = [];
+class User {
+  constructor(data) {
+    this.id = data.id;
+    this.avatar = data.avatar;
+    this.first_name = data.first_name;
+    this.last_name = data.last_name;
+    this.email = data.email;
+  }
+  getInfo() {
+    return {
+      id: this.id,
+      avatar: this.avatar,
+      first_name: this.first_name,
+      last_name: this.last_name,
+      email: this.email,
+    };
+  }
+  createCardUser() {
+    return `
+      <div id = ${this.id} class="item col-xs-4 col-lg-4">
+        <div class="thumbnail card">
+          <div class="img-event">
+            <img
+              class="group list-group-image img-fluid"
+              src="${this.avatar}"
+              alt=""
+            />
+          </div>
+          <div class="caption card-body">
+            <h4 class="group card-title inner list-group-item-heading">
+              ${this.first_name + " " + this.last_name}
+            </h4>
+            <p class="group inner list-group-item-text">
+              Description
+            </p>
+            <div class="row">
+              <div class="col-xs-12 col-md-12">
+                <p class="lead">
+                  ${this.email}
+                </p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-12 col-md-3">
+                <button class="btn btn-success" 
+                  data-toggle="modal"
+                  data-target="#squarespaceModal"
+                  onclick="setDefaultInfoForUpdateUser(${this.id})"
+                >Edit</button>
+              </div>
+              <div class="col-xs-12 col-md-3">
+                <button class="btn btn-danger" 
+                  onclick="deleteUserHandler(${this.id})"
+                >Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      `;
+  }
+}
+
+var DictionaryUsers = {};
 
 $(document).ready(function () {
   getData();
   $("#list").click(function (event) {
     event.preventDefault();
-
     $("#products .item").addClass("list-group-item");
   });
   $("#grid").click(function (event) {
@@ -14,58 +76,14 @@ $(document).ready(function () {
   });
 });
 
-function createCardUser(user) {
-  return `
-    <div id = ${user.id} class="item col-xs-4 col-lg-4">
-    <div class="thumbnail card">
-      <div class="img-event">
-        <img
-          class="group list-group-image img-fluid"
-          src="${user.avatar}"
-          alt=""
-        />
-      </div>
-      <div class="caption card-body">
-        <h4 class="group card-title inner list-group-item-heading">
-          ${user.first_name + " " + user.last_name}
-        </h4>
-        <p class="group inner list-group-item-text">
-          Description
-        </p>
-        <div class="row">
-          <div class="col-xs-12 col-md-12">
-            <p class="lead">
-              ${user.email}
-            </p>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-xs-12 col-md-3">
-            <button class="btn btn-success" 
-              data-toggle="modal"
-              data-target="#squarespaceModal"
-              onclick="setDefaultInfoForUpdateUser(${user.id})"
-            >Edit</button>
-          </div>
-          <div class="col-xs-12 col-md-3">
-            <button class="btn btn-danger" 
-              onclick="deleteUserHandler(${user.id})"
-            >Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-    `;
-}
-
 async function getData() {
-  $.get("/users", function (data, status) {
+  $.get("/api/users", function (data, status) {
     if (data !== null) {
-      console.log(data);
-      listUsers = data.data.data;
-      for (let userIndex in listUsers) {
-        $("#products").append(createCardUser(listUsers[userIndex]));
+      let listUsers = data.data;
+      for (let index in listUsers) {
+        user = new User({ ...listUsers[index] });
+        DictionaryUsers[user.id] = user;
+        $("#products").append(user.createCardUser());
       }
     }
   });
@@ -79,13 +97,11 @@ function postUserHandler(event) {
     last_name: document.getElementById("lastname").value,
     email: document.getElementById("email").value,
   };
-  $.post("/users", user, function (data, status) {
+  $.post("/api/users", user, function (data, status) {
     if (data !== null) {
-      var userSuccess = data.data;
-      userSuccess.id = parseInt(userSuccess.id);
-      listUsers.push(userSuccess);
-      console.log(listUsers);
-      $("#products").append(createCardUser(userSuccess));
+      addedUser = new User({ ...data });
+      DictionaryUsers[addedUser.id] = addedUser;
+      $("#products").append(addedUser.createCardUser());
     }
   });
 }
@@ -100,20 +116,15 @@ function updateUserHandler(event) {
     email: document.getElementById("inputEmail").value,
   };
   $.ajax({
-    url: "/users",
+    url: "/api/users",
     type: "PUT",
     data: user,
     success: function (data, status) {
       if (data !== null) {
-        var updatedUser = data.data;
-        updatedUser.id = parseInt(updatedUser.id);
-        $(`#${updatedUser.id}`).replaceWith(createCardUser(updatedUser));
+        updatedUser = new User({ ...data });
+        DictionaryUsers[updatedUser.id] = updatedUser;
+        $(`#${updatedUser.id}`).replaceWith(updatedUser.createCardUser());
         $("#squarespaceModal").trigger("click");
-        for (index in listUsers) {
-          if (listUsers[index].id === updatedUser.id) {
-            listUsers[index] = updatedUser;
-          }
-        }
         alert("Update successfully!");
       }
     },
@@ -121,43 +132,24 @@ function updateUserHandler(event) {
 }
 
 function deleteUserHandler(userId) {
-  const user = findUserById(userId);
+  const user = DictionaryUsers[userId];
   if (user !== null) {
     $.ajax({
-      url: "/users",
+      url: "/api/users",
       type: "DELETE",
-      data: user,
+      data: user.getInfo(),
       success: function (data, status) {
         if (data !== null) {
-          let index = findIndexOfUserById(parseInt(data.data.id));
-          $(`#${data.data.id}`).remove();
-          listUsers.splice(index, 1);
+          $(`#${userId}`).remove();
+          delete DictionaryUsers[userId];
         }
       },
     });
   }
 }
 
-function findUserById(userId) {
-  for (index in listUsers) {
-    if (listUsers[index].id === userId) {
-      return listUsers[index];
-    }
-  }
-  return null;
-}
-
-function findIndexOfUserById(userId) {
-  for (index in listUsers) {
-    if (listUsers[index].id === userId) {
-      return index;
-    }
-  }
-  return null;
-}
-
 function setDefaultInfoForUpdateUser(userId) {
-  let user = findUserById(userId);
+  let user = DictionaryUsers[userId].getInfo();
   if (user !== null) {
     document.getElementById("inputId").value = user.id;
     document.getElementById("inputAvatarLink").value = user.avatar;
