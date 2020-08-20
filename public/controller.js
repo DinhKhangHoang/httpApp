@@ -102,6 +102,7 @@ function postUserHandler(event) {
       addedUser = new User({ ...data });
       DictionaryUsers[addedUser.id] = addedUser;
       $("#products").append(addedUser.createCardUser());
+      resetForm();
     }
   });
 }
@@ -157,4 +158,11 @@ function setDefaultInfoForUpdateUser(userId) {
     document.getElementById("inputLastName").value = user.last_name;
     document.getElementById("inputEmail").value = user.email;
   }
+}
+
+function resetForm() {
+  document.getElementById("avatar").value = "";
+  document.getElementById("firstname").value = "";
+  document.getElementById("lastname").value = "";
+  document.getElementById("email").value = "";
 }
